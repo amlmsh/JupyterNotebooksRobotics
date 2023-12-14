@@ -2,15 +2,15 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "0dad6473",
+   "id": "40dc8c39",
    "metadata": {},
    "source": [
-    "# Herleitung der HTM für Standardmanipulatoren"
+    "# Herleitung der HTM für Standardmanipulatoren mitt DH-Parametern"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "e01d64da",
+   "id": "5daebc5b",
    "metadata": {},
    "source": [
     "## (1) SCARA"
@@ -18,7 +18,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b0201a0f",
+   "id": "cd6daa31",
    "metadata": {},
    "source": [
     "Folgende Bibliotheken, Funktionen und Konstanten werden genutzt:"
@@ -27,11 +27,12 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "11a0ad98",
+   "id": "dcea37fc",
    "metadata": {},
    "outputs": [],
    "source": [
     "from matplotlib import pyplot as plt\n",
+    "from IPython.display import display, Math, Latex\n",
     "from numpy.linalg import inv\n",
     "from IPython import display\n",
     "import numpy as np\n",
@@ -45,22 +46,32 @@
     "    print(\"[%6.2f\\t%6.2f\\t%6.2f\\t%6.2f]\"%(m[2,0],m[2,1],m[2,2],m[2,3]))\n",
     "    print(\"[%6.2f\\t%6.2f\\t%6.2f\\t%6.2f]\"%(m[3,0],m[3,1],m[3,2],m[3,3]))\n",
     "    \n",
-    "def rotX(phi):\n",
-    "    m = np.array([[1,0,0,0],[0,math.cos(phi),math.sin(phi),0],[0,-math.sin(phi),math.cos(phi),0],[0,0,0,1]])\n",
-    "    return m\n",
-    "\n",
-    "def rotY(phi):\n",
-    "    m = np.array([[math.cos(phi),0,-math.sin(phi),0],[0,1,0,0],[math.sin(phi),0,math.cos(phi),0],[0,0,0,1]])\n",
-    "    return m\n",
     "    \n",
-    "def rotZ(phi):\n",
-    "    m = np.array([[math.cos(phi),math.sin(phi),0,0],[-math.sin(phi),math.cos(phi),0,0],[0,0,1,0],[0,0,0,1]])\n",
-    "    return m"
+    "    \n",
+    "def DH4x4(PHI,ALPHA,a,d):\n",
+    "    H = np.array([1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]);    \n",
+    "    \n",
+    "    H[1,1] =  math.cos(T);\n",
+    "    H[1,2] = -math.sin(T)*math.cos(A);\n",
+    "    H[1,3] =  math.sin(T)*math.sin(A);\n",
+    "    H[1,4] = a*cos(T);\n",
+    "    \n",
+    "    H[2,1] = sin(T);\n",
+    "    H[2,2] = math.cos(T)*math.cos(A);\n",
+    "    H[2,3] = -math.cos(T)*math.sin(A);\n",
+    "    H[2,4] = a*math.sin(T);\n",
+    "    \n",
+    "    H[3,1] = 0;\n",
+    "    H[3,2] = math.sin(A);\n",
+    "    H[3,3] = math.cos(A);\n",
+    "    H[3,4] = d;\n",
+    "    \n",
+    "    return H;"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "5b81c76f",
+   "id": "5521d7cb",
    "metadata": {},
    "source": [
     "### (I) Kinematisches Model des Roboters"
@@ -68,7 +79,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1d43b00a",
+   "id": "084645b7",
    "metadata": {},
    "source": [
     "#### (I.1) Der Roboter"
@@ -76,31 +87,63 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0caef031",
-   "metadata": {},
-   "source": []
-  },
-  {
-   "cell_type": "markdown",
-   "id": "a2dc0b56",
+   "id": "4660de0a",
    "metadata": {},
    "source": [
-    "#### (I.2) Kinematische Struktur und Parameter"
+    "..."
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "dfa5b414",
+   "id": "ad40072a",
+   "metadata": {},
+   "source": [
+    "#### (I.2) Kinematische Struktur und DH-Parameter"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "fb1f0cb1",
    "metadata": {},
    "source": [
     "Die wesentlichen Parameter des SCARA-Roboters sind zwei Rotations und ein Translationsgelenk.\n",
-    "Im folgenden ist die Kinematische Kette des Systems angegeben. Neben den Gelenkparametern $\\phi_0$, $\\phi_1$ und $d_2$ sind noch die Parameter zu Gliederabständen ($a_0$, $a_1$, $a_2$ und $a_3$) gegeben. Weiterhin sind die Koordinatensysteme KS0, KS1, KS2, KS3 für jedes Gelenk und den TCP eingetragen. Die Koordinatensysteme drehen oder bewegen sich nicht mit, wenn die entsprechenden Gelenkwerte verändert werden."
+    "Im folgenden ist die Kinematische Kette des Systems angegeben. Neben den Gelenkparametern $\\phi_0$, $\\phi_1$ und $d_2$ sind noch die Parameter zu Gliederabständen ($a_0$, $a_1$, $a_2$ und $a_3$) gegeben. Weiterhin sind die Koordinatensysteme KS0, KS1, KS2, KS3 für jedes Gelenk und den TCP eingetragen. Die Koordinatensysteme drehen oder bewegen sich nicht mit, wenn die entsprechenden Gelenkwerte verändert werden.\n",
+    "\n",
+    "Mit den sogenannten Denavit-Hartenber-Paramtern (DH-Parameter) kann eine HTM für zwei benachbarte Gelenke einer kinematischen Kette direkt erzeugt werden. Dabei muss die Kinematische Struktur folgenden Regeln genügen."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5a9a10b8",
+   "metadata": {},
+   "source": [
+    "##### Regeln zur Definition der Koordinatensysteme:"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a38226f2",
+   "metadata": {},
+   "source": [
+    "**(1)** Die KS sind aufsteigend nummeriert (Basis = 0).\n",
+    "\n",
+    "**(2)** Kinematische Struktur in Grundposition (d.h. Gelenkewerte = 0)\n",
+    "\n",
+    "**(3)** Die $Z$-Achse ist jeweils Gelenkachse.\n",
+    "\n",
+    "**(4)** Die $X$-Achse des Gelenks $n$ ist rechtwinklig zur $Z$-Achse des Gelenks $n$ und $(n-1)$.\n",
+    "\n",
+    "**(5)** Die $X$-Achse von Gelenk $n$ muss die $Z$-Achse von Gelenk $(n-1)$ schneiden.\n",
+    "\n",
+    "**(6)** Drei-Fingelregel\n",
+    "\n",
+    "Diese Regeln sind in der folgenden Kinematischen Struktur erfüllt."
    ]
   },
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "67b0e150",
+   "id": "a384e811",
    "metadata": {},
    "outputs": [
     {
@@ -122,7 +165,7 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "ba24b371",
+   "id": "29510f46",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -138,7 +181,7 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "8c962944",
+   "id": "ed4f3dc3",
    "metadata": {},
    "outputs": [
     {
@@ -168,655 +211,203 @@
   },
   {
    "cell_type": "markdown",
-   "id": "9b06bf8e",
+   "id": "22d36e58",
    "metadata": {},
    "source": [
-    "#### (I.3) Koordinatensysteme"
+    "### (II) Herleitung der HTM mittels DH-Paremeter"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "d972febb",
+   "id": "34e1c66f",
    "metadata": {},
    "source": [
-    "### (II) Herleitung der HTM"
+    "##### Regeln zur Herleitung der DH-Parameter:"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "b802ba39",
+   "id": "54508256",
    "metadata": {},
    "source": [
-    "Kinematische Kette..."
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "5c83c846",
-   "metadata": {},
-   "source": [
-    "#### (II.1) HTM $^{2}_{3}T$"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "8066fa39",
-   "metadata": {},
-   "source": [
-    "Die Koordinatensysteme KS3 und KS2 haben die gleiche Orientierung. Die Orientierung verändert sich auch nicht, wenn beliebige Gelenkwerte verändert werden. Daher hat die HTM $^{2}_{3}T$ keine Rotationsanteil. \n",
+    "**$\\Phi_n$** ... Rotation des Koordinaten-\n",
+    "systems $(n-1)$ um $z_{n-1}$ damit $x_{n-1}$ und $x_n$\n",
+    "die gleiche Orientierung besitzen\n",
+    "Θn \n",
     "\n",
-    "Ein Translationsanteil ist jeodch vorhanden. Dieser ist einmal fest, definert durch die Link-Länge $a_3$, und einmal variabel durch das Translationsgelenk, repäsentiert durch den Parameter $d_2$.\n",
+    "**$\\mathrm{A}_n$** ... Rotation des Koordinatensystem $(n-1)$ um $x_n$\n",
+    "damit $z_{n-1}$ und $z_n$ die gleiche Orientierung besitzen\n",
     "\n",
-    "Der parametrisierte Translationsvektor $^{2}V$ bzgl. Zielkoordinatensystem KS2 beträgt:\n",
-    "$$\n",
-    " ^{2}V = \\left( \\begin{array}{c} 0 \\\\ 0 \\\\ a_3 + d_2 \\\\ 1 \\end{array}\\right) \n",
-    "$$"
+    "\n",
+    "**$r_n$** ... Abstand zwischen Urspung von Koordinatensystem $n$ und $(n-1)$\n",
+    "relativ zu $x_n$\n",
+    "\n",
+    "**$d_n$** ... Abstand zwischen Urspung von Koordinatensystem $n$ und $(n-1)$ relativ zu $z_{n-1}$"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "a177a003",
+   "id": "186103f6",
    "metadata": {},
    "source": [
-    "Die finale HTM $^{2}_{3}T(d_2)$ beträgt somit:\n",
+    "Die DH-Parameter Tabelle für die gegebene Kinematische Struktur hat vier Spalten und 3 Zeilen, startend mit Nummer 1 für die Variable $n$."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5f2d355d",
+   "metadata": {},
+   "source": [
+    " $$   \n",
+    "    \\begin{array}{c || c|c|c|c}       \n",
+    "       n & \\Phi_n &  \\mathrm{A}_n &  r_n & d_n \\\\ \n",
+    "        \\hline\n",
+    "      1 & \\phi_0  & 0   & a_1  & a_0 \\\\\n",
+    "      2 & \\phi_1  & \\pi & a_2  & 0 \\\\       \n",
+    "      3 & 0  & 0  & 0   & (a_3 + d_2) \\\\\n",
+    "    \\end{array}\n",
+    " $$"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a9b9b0d2",
+   "metadata": {},
+   "source": [
+    "Mit diesen Parametern lassen sich nun die drei HTMs $^{0}_{1}T$, $^{1}_{2}T$ und $^{2}_{3}T$ mit der folgendne Definition herleiten."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "94385bbd",
+   "metadata": {},
+   "source": [
     "$$\n",
-    "   ^{3}_{2}T ~=~ \n",
+    "  ^{(n-1)}_{n}T(\\Phi_n, \\mathrm{A}_n, r_n, d_n) ~=~ \n",
     "   \\left( \\begin{array}{cccc}       \n",
-    "      1 & 0 & 0 & 0 \\\\       \n",
-    "      0 & 1 & 0 & 0 \\\\       \n",
-    "      0 & 0 & 1 & (a_3+d_2) \\\\\n",
+    "      cos(\\Phi_n) &  -sin(\\Phi_n)\\cdot cos(\\mathrm{A}_n)  &  sin(\\Phi_n)\\cdot sin(\\mathrm{A}_n) & r_n \\cdot cos(\\Phi_n) \\\\       \n",
+    "      sin(\\Phi_n) &   cos(\\Phi_n)\\cdot cos(\\mathrm{A}_n)  & -cos(\\Phi_n)\\cdot sin(\\mathrm{A}_n) & r_n \\cdot sin(\\Phi_n) \\\\       \n",
+    "      0 & sin(\\mathrm{A}_n) & cos(\\mathrm{A}_n) & d_n\\\\\n",
     "      0 & 0 & 0 & 1\\\\\n",
     "   \\end{array}\\right)\n",
-    "$$"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 5,
-   "id": "bd8763d9",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "T_3_2 = np.array([[1,0,0,0],[0,1,0,0],[0,0,1,(a3+d2)],[0,0,0,1]]);"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 6,
-   "id": "351b5f28",
-   "metadata": {},
-   "outputs": [
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "T_3_2 = \n",
-      "[  1.00\t  0.00\t  0.00\t  0.00]\n",
-      "[  0.00\t  1.00\t  0.00\t  0.00]\n",
-      "[  0.00\t  0.00\t  1.00\t  1.00]\n",
-      "[  0.00\t  0.00\t  0.00\t  1.00]\n"
-     ]
-    }
-   ],
-   "source": [
-    "#Ausgabe der Berechnungsergebnisse\n",
-    "print(\"T_3_2 = \",end=\"\\n\"); plot4x4Mat(T_3_2)"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "acb8090c",
-   "metadata": {},
-   "source": [
-    "#### (II.2) HTM $^{1}_{2}T$"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "89533003",
-   "metadata": {},
-   "source": [
-    "In der Grundstellung (siehe Kinematische Struktur oben) habe die beiden Koordinatensysteme K2 und K1 eine unterschiedliche Orientierung. Die Orientierung der Koordinatensysteme ist ausserdem noch bestimmt durch die Gelenkstellung $\\phi_1$. \n",
-    "In der Grundstellung ($\\phi_1 = 0$) können die beiden Koordinatensysteme in die gleiche Orientierung gebracht werden, wenn KS2 entlang der X-Achse eine Rotation um 180° bzw. $\\pi$(rad) erfährt.\n",
-    "\n",
-    "Eine weitere Rotation ist notwendig, wenn $\\phi \\neq 0$ gilt. Dann muss KS2 entlang der Z-Achse zusätzlich rotiert werden. Der Betrag dieser Rotation ist leicht aus der Kinematischen Struktur abzulesen. Der Betrag der Rotation beträgt $|\\phi|$. Fraglich ist das Vorzeichen.\n",
-    "\n",
-    "Bzgl. der Definitionen aus der Vorlesung betrachten wir die Drehung von KS2 (Ursprungskoordinatensystem) zu KS1 (Zielkoordinatensystem) hin. Wird nun zuerst die Rotation von KS2 um die X-Achse durchgeführt und danach die Rotation um die Z-Achse, dann beträgt der Wert des Rotationswinkels $-\\phi$. Denn KS2 müsste dann entgeben der postiven Drehrichtung Rotiert werden.\n",
-    "\n",
-    "Wird hingegen zuerste die Drehung um die Z-Achse ausgeführt und als zweites die Rotation um die X-Achse, dann ist der Rotationswinkel $+\\phi$. \n",
-    "\n",
-    "\n",
+    "$$\n",
     "\n",
     "\n"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "bf4941fc",
+   "id": "d968d43c",
    "metadata": {},
    "source": [
-    "Es gibt also mindestens zwei Möglichkeiten die Rotationen darzustellen. Erste Variante, erst Rotation um die X-Achse und dann um die Z-Achse:\n",
-    "\n",
-    "$$ \n",
-    " ^{1}_{2}R_{XZY}(\\pi,-\\phi_1,0) =  R_Y(0) \\cdot R_Z(-\\phi_1) \\cdot R_X(\\pi) \\\\\n",
-    "~=~  \\\\\n",
-    "   \\left( \\begin{array}{cccc}       \n",
-    "       cos(0) & 0 & -sin(0) & 0 \\\\       \n",
-    "      0 & 1 & 0 & 0 \\\\       \n",
-    "      sin(0) & 0 &  cos(0) & 0 \\\\\n",
-    "       0 & 0 & 0 & 1\\\\\n",
-    "   \\end{array}\\right)\n",
-    "   ~\\cdot~\n",
-    "   \\left( \\begin{array}{cccc}       \n",
-    "      cos(-\\phi_1) &  sin(-\\phi_1) & 0 & 0 \\\\       \n",
-    "      -sin(-\\phi_1) & cos(-\\phi_1) & 0 & 0\\\\       \n",
-    "      0 & 0 & 1 & 0\\\\\n",
-    "      0 & 0 & 0 & 1\\\\\n",
-    "   \\end{array}\\right)\n",
-    "   ~\\cdot~\n",
-    "   \\left( \\begin{array}{cccc}       \n",
-    "      1 & 0 & 0 & 0 \\\\       \n",
-    "      0 & cos(\\pi) & sin(\\pi) & 0\\\\       \n",
-    "      0 & -sin(\\pi) & cos(\\pi) & 0 \\\\           \n",
-    "      0 & 0 & 0 & 1\\\\\n",
-    "   \\end{array}\\right) \\\\\n",
-    "~=~\n",
-    "   \\left( \\begin{array}{cccc}       \n",
-    "      1 & 0 & 0 & 0 \\\\       \n",
-    "      0 & 1 & 0 & 0 \\\\       \n",
-    "      0 & 0 & 1 & 0 \\\\\n",
-    "      0 & 0 & 0 & 1\\\\\n",
-    "   \\end{array}\\right)\n",
-    "   ~\\cdot~\n",
-    "   \\left( \\begin{array}{cccc}       \n",
-    "      cos(\\phi_1) &  -sin(\\phi_1) & 0 & 0 \\\\       \n",
-    "      sin(\\phi_1) & cos(\\phi_1) & 0 & 0\\\\       \n",
-    "      0 & 0 & 1 & 0\\\\\n",
-    "      0 & 0 & 0 & 1\\\\\n",
-    "   \\end{array}\\right)\n",
-    "   ~\\cdot~\n",
-    "   \\left( \\begin{array}{cccc}       \n",
-    "      1 & 0 & 0 & 0 \\\\       \n",
-    "      0 & -1 & 0 & 0\\\\       \n",
-    "      0 &  0 & -1 & 0 \\\\           \n",
-    "      0 & 0 & 0 & 1\\\\\n",
-    "   \\end{array}\\right) \\\\\n",
-    "~=~\n",
-    "   \\left( \\begin{array}{cccc}       \n",
-    "      cos(\\phi_1) &  sin(\\phi_1) & 0 & 0 \\\\       \n",
-    "      sin(\\phi_1) & -cos(\\phi_1) & 0 & 0\\\\       \n",
-    "      0 & 0 & -1 & 0\\\\\n",
-    "      0 & 0 & 0 & 1\\\\\n",
-    "   \\end{array}\\right)\n",
-    "$$"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 7,
-   "id": "f211a2e0",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "R1_2_1 = rotY(0) @ rotZ(-phi1) @ rotX(PI);"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 8,
-   "id": "53e3f70f",
-   "metadata": {},
-   "outputs": [
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "R1_2_1 = \n",
-      "[  1.00\t  0.00\t  0.00\t  0.00]\n",
-      "[  0.00\t -1.00\t  0.00\t  0.00]\n",
-      "[  0.00\t -0.00\t -1.00\t  0.00]\n",
-      "[  0.00\t  0.00\t  0.00\t  1.00]\n"
-     ]
-    }
-   ],
-   "source": [
-    "#Ausgabe der Berechnungsergebnisse\n",
-    "print(\"R1_2_1 = \",end=\"\\n\"); plot4x4Mat(R1_2_1)"
+    "### (III) Herleitung der DH-Matrix"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "e323041b",
-   "metadata": {},
-   "source": [
-    "Bei der zweite Variante wird erst um die Z-Achse und dann um die X-Achse rotiert:\n",
-    "$$ \n",
-    "^{1}_{2}R_{ZXY}(\\phi_1,\\pi,0) =  R_Y(0) \\cdot R_X(\\pi) \\cdot R_Z(\\phi_1) \\\\\n",
-    "~=~\n",
-    "   \\left( \\begin{array}{cccc}       \n",
-    "       cos(0) & 0 & -sin(0) & 0 \\\\       \n",
-    "      0 & 1 & 0 & 0 \\\\       \n",
-    "      sin(0) & 0 &  cos(0) & 0 \\\\\n",
-    "       0 & 0 & 0 & 1\\\\\n",
-    "   \\end{array}\\right)\n",
-    "   ~\\cdot~\n",
-    "   \\left( \\begin{array}{cccc}       \n",
-    "      1 & 0 & 0 & 0 \\\\       \n",
-    "      0 & cos(\\pi) & sin(\\pi) & 0\\\\       \n",
-    "      0 & -sin(\\pi) & cos(\\pi) & 0 \\\\           \n",
-    "      0 & 0 & 0 & 1\\\\\n",
-    "   \\end{array}\\right)\n",
-    "   ~\\cdot~\n",
-    "   \\left( \\begin{array}{cccc}       \n",
-    "      cos(\\phi_1) &  sin(\\phi_1) & 0 & 0 \\\\       \n",
-    "      -sin(\\phi_1) & cos(\\phi_1) & 0 & 0\\\\       \n",
-    "      0 & 0 & 1 & 0\\\\\n",
-    "      0 & 0 & 0 & 1\\\\\n",
-    "   \\end{array}\\right)\\\\\n",
-    "~=~\n",
-    "   \\left( \\begin{array}{cccc}       \n",
-    "      1 & 0 & 0 & 0 \\\\       \n",
-    "      0 & 1 & 0 & 0 \\\\       \n",
-    "      0 & 0 & 1 & 0 \\\\\n",
-    "      0 & 0 & 0 & 1\\\\\n",
-    "   \\end{array}\\right)\n",
-    "   ~\\cdot~\n",
-    "   \\left( \\begin{array}{cccc}       \n",
-    "      1 & 0 & 0 & 0 \\\\       \n",
-    "      0 & -1 & 0 & 0\\\\       \n",
-    "      0 & 0 & -1 & 0 \\\\           \n",
-    "      0 & 0 & 0 & 1\\\\\n",
-    "   \\end{array}\\right)\n",
-    "   ~\\cdot~\n",
-    "   \\left( \\begin{array}{cccc}       \n",
-    "      cos(\\phi_1) &  sin(\\phi_1) & 0 & 0 \\\\       \n",
-    "      -sin(\\phi_1) & cos(\\phi_1) & 0 & 0\\\\       \n",
-    "      0 & 0 & 1 & 0\\\\\n",
-    "      0 & 0 & 0 & 1\\\\\n",
-    "   \\end{array}\\right)\\\\\n",
-    "~=~\n",
-    "   \\left( \\begin{array}{cccc}       \n",
-    "      cos(\\phi_1) &  sin(\\phi_1) & 0 & 0 \\\\       \n",
-    "      sin(\\phi_1) & -cos(\\phi_1) & 0 & 0\\\\       \n",
-    "      0 & 0 & -1 & 0\\\\\n",
-    "      0 & 0 & 0 & 1\\\\\n",
-    "   \\end{array}\\right)\n",
-    "$$"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 9,
-   "id": "660758d6",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "R2_2_1 = rotY(0) @ rotX(PI) @ rotZ(phi1);"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 10,
-   "id": "18232c41",
-   "metadata": {},
-   "outputs": [
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "R2_2_1 = \n",
-      "[  1.00\t  0.00\t  0.00\t  0.00]\n",
-      "[  0.00\t -1.00\t  0.00\t  0.00]\n",
-      "[  0.00\t -0.00\t -1.00\t  0.00]\n",
-      "[  0.00\t  0.00\t  0.00\t  1.00]\n"
-     ]
-    }
-   ],
-   "source": [
-    "#Ausgabe der Berechnungsergebnisse\n",
-    "print(\"R2_2_1 = \",end=\"\\n\"); plot4x4Mat(R2_2_1)"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "c79f5f42",
-   "metadata": {},
-   "source": [
-    "Mit beiden Varianten werden die Koordinatensystem KS2 und KS1 in die gleiche Orientierung gebracht. Beide Varianten führen auch zu den gleichen Rotationsmatrizen."
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "a5fd0065",
-   "metadata": {},
-   "source": [
-    "Auch der Translationsvektor $^{1}V$ ist nicht direkt aus der Kinematischen Struktur abzulesen. Befindet sich der Roboter nicht in der Grundstellung, dann hat dieser Vektor x- und y-Anteile, abhängig von der Gelenkstellung $\\phi_1$.\n",
-    "$$\n",
-    " ^{1}V = \\left( \\begin{array}{c} a_2\\cdot cos(\\phi_1) \\\\ a_2\\cdot sin(\\phi_1) \\\\ 0 \\\\ 1 \\end{array}\\right) \n",
-    "$$"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "81d0d782",
-   "metadata": {},
-   "source": [
-    "Damit ergibt sich folgende paremetrisierte HTM $^{1}_{2}T(\\phi_1)$:"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "69bb5d1f",
+   "id": "f4d2da64",
    "metadata": {},
    "source": [
     "$$\n",
-    "  ^{1}_{2}T(\\phi_1) ~=~ \n",
-    "   \\left( \\begin{array}{cccc}       \n",
-    "      cos(\\phi_1) &  sin(\\phi_1) & 0 & a_2\\cdot cos(\\phi_1) \\\\       \n",
-    "      sin(\\phi_1) & -cos(\\phi_1) & 0 & a_2\\cdot sin(\\phi_1) \\\\       \n",
-    "      0 & 0 & -1 & 0\\\\\n",
-    "      0 & 0 & 0 & 1\\\\\n",
-    "   \\end{array}\\right)\n",
-    "$$"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 11,
-   "id": "3b46b169",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "T_2_1 = R2_2_1;\n",
-    "T_2_1[0,3] = a2*math.cos(phi1)\n",
-    "T_2_1[1,3] = a2*math.sin(phi1)"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 12,
-   "id": "f447295c",
-   "metadata": {},
-   "outputs": [
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "T_2_1 = \n",
-      "[  1.00\t  0.00\t  0.00\t  1.00]\n",
-      "[  0.00\t -1.00\t  0.00\t  0.00]\n",
-      "[  0.00\t -0.00\t -1.00\t  0.00]\n",
-      "[  0.00\t  0.00\t  0.00\t  1.00]\n"
-     ]
-    }
-   ],
-   "source": [
-    "#Ausgabe der Berechnungsergebnisse\n",
-    "print(\"T_2_1 = \",end=\"\\n\"); plot4x4Mat(T_2_1)"
+    "  ^{(n-1)}_{n}T(\\Phi_n, \\mathrm{A}_n, a_n, d_n) ~=~ \n",
+    "    \\left( ^{(n-1)}_{n}T_{Tran_{Z{(n-1)}}}(d_n) ~\\cdot~ ^{(n-1)}_{n}R_{Z_{(n-1)}}(\\Phi_n) \\right) \\cdot \n",
+    "    \\left( ^{(n-1)}_{n}T_{Tran_{X{n}}}(r_n) ~\\cdot~ ^{(n-1)}_{n}R_{X_{n}}(\\mathrm{A}_n) \\right)\n",
+    "$$\n"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "afe8546c",
+   "id": "1bf022df",
    "metadata": {},
    "source": [
-    "#### (II.3) HTM $^{0}_{1}T$"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "042095b8",
-   "metadata": {},
-   "source": [
-    "Die HTM kann genauso hergeleitet werden wie $^{1}_{2}T$ oben.Der einzige Unterschied ist, dass es keine konstante Rotation um $\\pi$ gibt. Daher gibt es auch nur eine Rotation um die Achse Z des Zielkoordinatensystems KS0 mit negativen Betrag. Der Rotationswinkel ist also $-\\phi_0$."
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "28afcba0",
-   "metadata": {},
-   "source": [
-    "$$ \n",
-    " ^{Z}_{U}R_{XYZ}(0,0,-\\phi_0) =  R_Z(-\\phi_0) \\cdot R_Y(0) \\cdot R_X(0) \\\\\n",
+    "$$\n",
+    " ^{(n-1)}_{n}T_{Tran_{Z{(n-1)}}}(d_n) ~\\cdot~ ^{(n-1)}_{n}R_{Z_{(n-1)}}(\\Phi_n) \\\\\n",
     " ~=~ \n",
-    "   \\left( \\begin{array}{cccc}       \n",
-    "      cos(-\\phi_0) &  sin(-\\phi_0) & 0 & 0\\\\       \n",
-    "      -sin(-\\phi_0) & cos(-\\phi_0) & 0 & 0\\\\       \n",
-    "      0 & 0 & 1 & 0\\\\\n",
-    "      0 & 0 & 0 & 1\\\\\n",
-    "   \\end{array}\\right)\n",
-    " ~=~\n",
-    "   \\left( \\begin{array}{cccc}       \n",
-    "      cos(\\phi_0) &  -sin(\\phi_0) & 0 & 0\\\\       \n",
-    "      sin(\\phi_0) & cos(\\phi_0) & 0 & 0\\\\       \n",
-    "      0 & 0 & 1 & 0\\\\\n",
-    "      0 & 0 & 0 & 1\\\\\n",
-    "   \\end{array}\\right) \n",
-    "$$"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "fcd9923b",
-   "metadata": {},
-   "source": [
-    "$$\n",
-    " ^{0}V = \\left( \\begin{array}{c} a_1\\cdot cos(\\phi_0) \\\\ a_1\\cdot sin(\\phi_0) \\\\ a_0 \\\\ 1 \\end{array}\\right) \n",
-    "$$"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "5a2fe0b1",
-   "metadata": {},
-   "source": [
-    "$$\n",
-    "  ^{0}_{1}T(\\phi_1) ~=~ \n",
-    "   \\left( \\begin{array}{cccc}       \n",
-    "      cos(\\phi_0) &  -sin(\\phi_0) & 0 & a_1\\cdot cos(\\phi_0) \\\\       \n",
-    "      sin(\\phi_0) &  cos(\\phi_0) & 0 & a_1\\cdot sin(\\phi_0) \\\\       \n",
-    "      0 & 0 & 1 & a_0\\\\\n",
-    "      0 & 0 & 0 & 1\\\\\n",
-    "   \\end{array}\\right)\n",
-    "$$"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 13,
-   "id": "60749cab",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "T_1_0 = rotZ(-phi0)\n",
-    "T_1_0[0,3] = a1*math.cos(phi0)\n",
-    "T_1_0[1,3] = a1*math.sin(phi0)\n",
-    "T_1_0[2,3] = a0"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 14,
-   "id": "b73dbc3f",
-   "metadata": {},
-   "outputs": [
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "T_1_0 = \n",
-      "[  1.00\t  0.00\t  0.00\t  1.00]\n",
-      "[ -0.00\t  1.00\t  0.00\t  0.00]\n",
-      "[  0.00\t  0.00\t  1.00\t  1.00]\n",
-      "[  0.00\t  0.00\t  0.00\t  1.00]\n"
-     ]
-    }
-   ],
-   "source": [
-    "#Ausgabe der Berechnungsergebnisse\n",
-    "print(\"T_1_0 = \",end=\"\\n\"); plot4x4Mat(T_1_0)"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "f2ea0f01",
-   "metadata": {},
-   "source": [
-    "#### (II.4) Die finale HTM $^{0}_{3}T$"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "331b417f",
-   "metadata": {},
-   "source": [
-    "$$\n",
-    "  ^{0}_{3}T(\\phi_0,\\phi_1,d_2) ~=~  ^{0}_{1}T(\\phi_0) \\cdot ^{1}_{2}T(\\phi_1) \\cdot ^{2}_{3}T(d_2) \\\\\n",
-    "~=~\n",
-    "   \\left( \\begin{array}{cccc}       \n",
-    "      cos(\\phi_0) &  -sin(\\phi_0) & 0 & a_1\\cdot cos(\\phi_0) \\\\       \n",
-    "      sin(\\phi_0) &  cos(\\phi_0) & 0 & a_1\\cdot sin(\\phi_0) \\\\       \n",
-    "      0 & 0 & 1 & a_0\\\\\n",
-    "      0 & 0 & 0 & 1\\\\\n",
-    "   \\end{array}\\right)\n",
-    "\\cdot\n",
-    "   \\left( \\begin{array}{cccc}       \n",
-    "      cos(\\phi_1) &  sin(\\phi_1) & 0 & a_2\\cdot cos(\\phi_1) \\\\       \n",
-    "      sin(\\phi_1) & -cos(\\phi_1) & 0 & a_2\\cdot sin(\\phi_1) \\\\       \n",
-    "      0 & 0 & -1 & 0\\\\\n",
-    "      0 & 0 & 0 & 1\\\\\n",
-    "   \\end{array}\\right)\n",
-    "\\cdot\n",
-    "   \\left( \\begin{array}{cccc}       \n",
+    "    \\left( \\begin{array}{rrrr}       \n",
     "      1 & 0 & 0 & 0 \\\\       \n",
     "      0 & 1 & 0 & 0 \\\\       \n",
-    "      0 & 0 & 1 & (a_3+d_2) \\\\\n",
-    "      0 & 0 & 0 & 1\\\\\n",
+    "      0 & 0 & 1 & d_n \\\\       \n",
+    "      0 & 0 & 0 & 1 \\\\    \n",
     "   \\end{array}\\right)\n",
-    "$$"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 15,
-   "id": "ebf1b763",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "T_3_0 = T_1_0 @ T_2_1 @ T_3_2"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 16,
-   "id": "92b482e7",
-   "metadata": {},
-   "outputs": [
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "T_3_0 = \n",
-      "[  1.00\t  0.00\t  0.00\t  2.00]\n",
-      "[  0.00\t -1.00\t  0.00\t  0.00]\n",
-      "[  0.00\t -0.00\t -1.00\t  0.00]\n",
-      "[  0.00\t  0.00\t  0.00\t  1.00]\n"
-     ]
-    }
-   ],
-   "source": [
-    "#Ausgabe der Berechnungsergebnisse\n",
-    "print(\"T_3_0 = \",end=\"\\n\"); plot4x4Mat(T_3_0)"
+    "~\\cdot~\n",
+    "   \\left( \\begin{array}{rrrr}       \n",
+    "      cos(\\Phi_n) &  sin(\\Phi_n) & 0 & 0 \\\\       \n",
+    "      -sin(\\Phi_n) & cos(\\Phi_n) & 0 & 0\\\\       \n",
+    "      0 & 0 & 1 & 0\\\\\n",
+    "      0 & 0 & 0 & 1\\\\\n",
+    "   \\end{array}\\right)   \\\\\n",
+    "  ~=~ \n",
+    "   \\left( \\begin{array}{rrrr}       \n",
+    "      cos(\\Phi_n) &  sin(\\Phi_n) & 0 & 0 \\\\       \n",
+    "      -sin(\\Phi_n) & cos(\\Phi_n) & 0 & 0\\\\       \n",
+    "      0 & 0 & 0 & d_n\\\\\n",
+    "      0 & 0 & 0 & 1\\\\\n",
+    "   \\end{array}\\right)   \n",
+    "$$\n"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "e332a20a",
+   "id": "a436c623",
    "metadata": {},
    "source": [
-    "### (III) Übung"
+    "$$\n",
+    "  ^{(n-1)}_{n}T_{Tran_{X{n}}}(r_n) ~\\cdot~ ^{(n-1)}_{n}R_{X_{n}}(\\mathrm{A}_n) \\\\\n",
+    " ~=~ \n",
+    "    \\left( \\begin{array}{rrrr}       \n",
+    "      1 & 0 & 0 & r_n \\\\       \n",
+    "      0 & 1 & 0 & 0 \\\\       \n",
+    "      0 & 0 & 1 & 0 \\\\       \n",
+    "      0 & 0 & 0 & 1 \\\\    \n",
+    "   \\end{array}\\right)\n",
+    "~\\cdot~\n",
+    "   \\left( \\begin{array}{rrrr}       \n",
+    "      1 & 0 & 0 & 0 \\\\       \n",
+    "      0 &  cos(\\mathrm{A}_n) & sin(\\mathrm{A}_n) & 0\\\\       \n",
+    "      0 & -sin(\\mathrm{A}_n) & cos(\\mathrm{A}_n) & 0 \\\\           \n",
+    "      0 & 0 & 0 & 1\\\\\n",
+    "   \\end{array}\\right)    \\\\\n",
+    "  ~=~ \n",
+    "   \\left( \\begin{array}{rrrr}       \n",
+    "      1 & 0 & 0 & r_n \\\\       \n",
+    "      0 &  cos(\\mathrm{A}_n) & sin(\\mathrm{A}_n) & 0\\\\       \n",
+    "      0 & -sin(\\mathrm{A}_n) & cos(\\mathrm{A}_n) & 0 \\\\           \n",
+    "      0 & 0 & 0 & 1\\\\\n",
+    "   \\end{array}\\right)  \n",
+    "$$"
    ]
   },
   {
-   "cell_type": "code",
-   "execution_count": 17,
-   "id": "9afd4f08",
+   "cell_type": "markdown",
+   "id": "4658eb84",
    "metadata": {},
-   "outputs": [
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "phi0 = 1\n",
-      "phi1 = 2\n",
-      "d2 = 3\n",
-      "T_3_0 = \n",
-      "[ -0.99\t  0.14\t -0.00\t -0.45]\n",
-      "[  0.14\t  0.99\t  0.00\t  0.98]\n",
-      "[  0.00\t  0.00\t -1.00\t -3.00]\n",
-      "[  0.00\t  0.00\t  0.00\t  1.00]\n"
-     ]
-    }
-   ],
    "source": [
-    "# Parameter der Kinematischen Struktur\n",
-    "a0 = 1\n",
-    "a1 = 1\n",
-    "a2 = 1\n",
-    "a3 = 1\n",
-    "# Gelenkparameter\n",
-    "#phi0 = -PI/2\n",
-    "#phi1 = PI/2\n",
-    "#d2   = 2\n",
-    "print(\"phi0 = \", end=\"\")\n",
-    "phi0 = float(input());\n",
-    "print(\"phi1 = \", end=\"\")\n",
-    "phi1 = float(input());\n",
-    "print(\"d2 = \", end=\"\")\n",
-    "d2 = float(input());\n",
-    "# HTM: T_3_2 \n",
-    "T_3_2 = np.array([[1,0,0,0],[0,1,0,0],[0,0,1,(a3+d2)],[0,0,0,1]]);\n",
-    "# HTM: T_2_1 \n",
-    "T_2_1 = rotX(PI) @ rotZ(phi1);\n",
-    "T_2_1[0,3] = a2*math.cos(phi1)\n",
-    "T_2_1[1,3] = a2*math.sin(phi1)\n",
-    "# HTM: T_1_0 \n",
-    "T_1_0 = rotZ(-phi0)\n",
-    "T_1_0[0,3] = a1*math.cos(phi0)\n",
-    "T_1_0[1,3] = a1*math.sin(phi0)\n",
-    "T_1_0[2,3] = a0\n",
-    "# HTM: T_3_0 = T_1_0 * T_2_1 * T_3_2\n",
-    "T_3_0 = T_1_0 @ T_2_1 @ T_3_2\n",
-    "#Ausgabe der Berechnungsergebnisse\n",
-    "print(\"T_3_0 = \",end=\"\\n\"); plot4x4Mat(T_3_0)"
+    "$$\n",
+    "  ^{(n-1)}_{n}T(\\Phi_n, \\mathrm{A}_n, r_n, d_n) \\\\\n",
+    "    ~=~ \n",
+    "   \\left( \\begin{array}{rrrr}       \n",
+    "      cos(\\Phi_n) &  sin(\\Phi_n) & 0 & 0 \\\\       \n",
+    "      -sin(\\Phi_n) & cos(\\Phi_n) & 0 & 0\\\\       \n",
+    "      0 & 0 & 0 & d_n\\\\\n",
+    "      0 & 0 & 0 & 1\\\\\n",
+    "   \\end{array}\\right)\n",
+    "   \\cdot\n",
+    "     \\left( \\begin{array}{rrrr}       \n",
+    "      1 & 0 & 0 & r_n \\\\       \n",
+    "      0 &  cos(\\mathrm{A}_n) & sin(\\mathrm{A}_n) & 0\\\\       \n",
+    "      0 & -sin(\\mathrm{A}_n) & cos(\\mathrm{A}_n) & 0 \\\\           \n",
+    "      0 & 0 & 0 & 1\\\\\n",
+    "   \\end{array}\\right)  \n",
+    "  $$"
    ]
   },
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "27b6b1c7",
+   "id": "371b2e51",
    "metadata": {},
    "outputs": [],
    "source": []
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "6091c46a",
-   "metadata": {},
-   "outputs": [],
-   "source": []
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "55d88afc",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "\n",
-    "\n"
-   ]
   }
  ],
  "metadata": {
